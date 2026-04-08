@@ -5,18 +5,83 @@
 <title>KissanAI — Smart Farming Assistant</title>
 
 <style>
-body {font-family:'Poppins',sans-serif;background:#e9f9e2;margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;}
-.container{background:white;border-radius:20px;padding:30px;box-shadow:0 5px 20px rgba(0,0,0,0.1);width:90%;max-width:800px;text-align:center;}
-button{background:#4CAF50;color:white;border:none;padding:10px 20px;margin:5px;border-radius:10px;cursor:pointer;}
-button:hover{background:#45a049;}
-.hidden{display:none;}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:15px;margin-top:20px;}
-.card{background:#f7fff5;border:1px solid #d9f1d3;border-radius:15px;padding:15px;cursor:pointer;transition:0.3s;}
-.card:hover{transform:scale(1.05);background:#e9f9e2;}
-textarea{width:100%;height:100px;margin-top:15px;padding:10px;border-radius:10px;border:1px solid #ccc;resize:none;}
-#response{background:#f0fff0;margin-top:15px;padding:15px;border-radius:10px;white-space:pre-wrap;}
-</style>
+body{
+font-family:'Poppins',sans-serif;
+background:#e9f9e2;
+margin:0;
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:100vh;
+}
 
+.container{
+background:white;
+border-radius:20px;
+padding:30px;
+box-shadow:0 5px 20px rgba(0,0,0,0.1);
+width:90%;
+max-width:850px;
+text-align:center;
+}
+
+button{
+background:#4CAF50;
+color:white;
+border:none;
+padding:10px 18px;
+margin:5px;
+border-radius:10px;
+cursor:pointer;
+}
+
+button:hover{background:#45a049;}
+
+.hidden{display:none;}
+
+.cards{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+gap:15px;
+margin-top:20px;
+}
+
+.card{
+background:#f7fff5;
+border:1px solid #d9f1d3;
+border-radius:15px;
+padding:15px;
+cursor:pointer;
+transition:0.3s;
+}
+
+.card:hover{
+transform:scale(1.05);
+background:#e9f9e2;
+}
+
+textarea{
+width:100%;
+height:110px;
+margin-top:15px;
+padding:10px;
+border-radius:10px;
+border:1px solid #ccc;
+resize:none;
+}
+
+#response{
+background:#f0fff0;
+margin-top:15px;
+padding:15px;
+border-radius:10px;
+white-space:pre-wrap;
+}
+
+.tools{
+margin-top:10px;
+}
+</style>
 </head>
 
 <body>
@@ -24,8 +89,7 @@ textarea{width:100%;height:100px;margin-top:15px;padding:10px;border-radius:10px
 <div class="container">
 
 <div id="lang-section">
-<h1>🌾 Welcome to AI Agent</h1>
-<p>Select your language:</p>
+<h1>🌾 Select Language</h1>
 <button onclick="selectLang('en')">English</button>
 <button onclick="selectLang('ta')">தமிழ்</button>
 <button onclick="selectLang('hi')">हिन्दी</button>
@@ -45,6 +109,11 @@ textarea{width:100%;height:100px;margin-top:15px;padding:10px;border-radius:10px
 
 <textarea id="question"></textarea>
 
+<div class="tools">
+<button onclick="startMic()">🎤</button>
+<button onclick="toggleVoice()">🔊</button>
+</div>
+
 <button onclick="sendQuestion()" id="askBtn"></button>
 <button style="background:#d32f2f" onclick="clearChat()" id="clearBtn"></button>
 
@@ -60,6 +129,7 @@ textarea{width:100%;height:100px;margin-top:15px;padding:10px;border-radius:10px
 
 let lang="en";
 let currentAgent="";
+let voiceEnabled=true;
 
 const translations={
 en:{welcome:"🌾 Welcome, Farmer!",title:"Fertilizer AI Agent",placeholder:"Type your question here...",fert:"🌾 Fertilizer Recommendation",weather:"🌦️ Weather Insight",market:"💰 Market Prices",organic:"🌱 Organic Farming Tips",ask:"Ask",clear:"🧹 Clear Chat",change:"🌐 Change Language",popular:"🌾 Popular Questions"},
@@ -93,19 +163,34 @@ return text.replace(/\$/g,"₹").replace(/USD/g,"₹").replace(/INR/g,"₹");
 }
 
 function speak(text){
+if(!voiceEnabled) return;
 const msg=new SpeechSynthesisUtterance(text);
-msg.lang = lang==="ta"?"ta-IN":lang==="hi"?"hi-IN":"en-US";
+msg.lang=lang==="ta"?"ta-IN":lang==="hi"?"hi-IN":"en-US";
 speechSynthesis.cancel();
 speechSynthesis.speak(msg);
 }
 
+function toggleVoice(){
+voiceEnabled=!voiceEnabled;
+}
+
+function startMic(){
+const recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();
+recognition.lang=lang==="ta"?"ta-IN":lang==="hi"?"hi-IN":"en-US";
+recognition.start();
+recognition.onresult=function(e){
+question.value=e.results[0][0].transcript;
+};
+}
+
 function selectLang(selected){
+
 lang=selected;
 const t=translations[selected];
 
-welcomeMsg.innerText=t.welcome;
-title.innerText=t.title;
-question.placeholder=t.placeholder;
+document.getElementById("welcomeMsg").innerText=t.welcome;
+document.getElementById("title").innerText=t.title;
+document.getElementById("question").placeholder=t.placeholder;
 
 fertCard.innerText=t.fert;
 weatherCard.innerText=t.weather;
@@ -116,19 +201,19 @@ askBtn.innerText=t.ask;
 clearBtn.innerText=t.clear;
 langBtn.innerText=t.change;
 
-lang-section.classList.add("hidden");
-dashboard.classList.remove("hidden");
+document.getElementById("lang-section").classList.add("hidden");
+document.getElementById("dashboard").classList.remove("hidden");
 
 speak(t.welcome);
 }
 
 function showPopular(agent){
 currentAgent=agent;
-const resDiv=response;
-resDiv.innerHTML="<b>"+translations[lang].popular+"</b><br><br>";
+
+response.innerHTML="<b>"+translations[lang].popular+"</b><br><br>";
 
 popularQs[lang][agent].forEach(q=>{
-resDiv.innerHTML+=`<button onclick="sendQuestionPrompt('${q}')">${q}</button>`;
+response.innerHTML+=`<button onclick="sendQuestionPrompt('${q}')">${q}</button>`;
 });
 }
 
@@ -138,6 +223,7 @@ sendQuestion();
 }
 
 async function sendQuestion(){
+
 response.innerText="Thinking...";
 
 const res=await fetch("/ask",{
@@ -165,8 +251,8 @@ await fetch("/clear",{method:"POST"});
 }
 
 function changeLang(){
-dashboard.classList.add("hidden");
-lang-section.classList.remove("hidden");
+document.getElementById("dashboard").classList.add("hidden");
+document.getElementById("lang-section").classList.remove("hidden");
 response.innerText="";
 question.value="";
 }
