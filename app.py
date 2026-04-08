@@ -46,8 +46,9 @@ async def serve_frontend():
 # 🌍 Language Detection
 # ============================================================
 def detect_language(text: str):
-    tamil_chars = set("அஆஇஈஉஊஎஏஐஒஓஔகஙசஞடணதநபமயரலவஶஷஸஹ")
-    hindi_chars = set("अआइईउऊएऐओऔकखगघङचछजझञटठडढणतथदधनपफबभमयरलवशषसह")
+    tamil_chars = set("அஆஇஈஉஊஎஏஐஒஓஔகஙசஞடணதநபமயரலவ")
+    hindi_chars = set("अआइईउऊएऐओऔकखगघङचछजझञटठडढणतथदधन")
+
     if any(ch in tamil_chars for ch in text):
         return "ta"
     if any(ch in hindi_chars for ch in text):
@@ -64,7 +65,7 @@ chat_history = []
 # ============================================================
 class FertilizerCalcAgent:
     def recommend(self, q):
-        prompt = f"You are an Indian agriculture expert. Give 2-line fertilizer advice: {q}"
+        prompt = f"You are Indian agriculture expert. Give 2-line fertilizer advice: {q}"
         return groq_client.chat.completions.create(
             model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}]
@@ -88,7 +89,7 @@ class OrganicAgent:
 
 class MarketAgent:
     def handle(self, q):
-        prompt = f"Farmer query: {q}. Give 2-line market or selling advice."
+        prompt = f"Farmer query: {q}. Give market advice in Indian rupees only."
         return groq_client.chat.completions.create(
             model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}]
@@ -96,7 +97,7 @@ class MarketAgent:
 
 class PriceAgent:
     def get_prices(self, q):
-        prompt = f"Farmer query: {q}. Give 2-line crop price summary."
+        prompt = f"Farmer query: {q}. Give crop price in INR only."
         return groq_client.chat.completions.create(
             model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}]
@@ -104,7 +105,7 @@ class PriceAgent:
 
 class CropAgent:
     def handle(self, q):
-        prompt = f"Farmer query: {q}. Give 2-line crop or season advice."
+        prompt = f"Farmer query: {q}. Give crop advice."
         return groq_client.chat.completions.create(
             model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}]
@@ -112,33 +113,43 @@ class CropAgent:
 
 class IrrigationAgent:
     def handle(self, q):
-        prompt = f"Farmer query: {q}. Give 2-line irrigation advice."
+        prompt = f"Farmer query: {q}. Give irrigation advice."
         return groq_client.chat.completions.create(
             model=MODEL_NAME,
             messages=[{"role": "user", "content": prompt}]
         ).choices[0].message.content.strip()
 
 # ============================================================
-# 🌦️ Weather Agent
+# 🌦️ Weather Agent (FINAL MULTI LANGUAGE)
 # ============================================================
 class WeatherAgent:
     def handle(self, query):
         try:
-            q = query.lower()
+            q = query.lower().strip()
 
-            for word in ["weather", "temperature", "forecast", "in", "today", "tomorrow"]:
-                q = q.replace(word, "")
+            location = "Chennai"
 
-            location = q.strip()
+            remove_words = [
+                "weather","temperature","forecast","rain","today","tomorrow",
+                "வானிலை","மழை","இன்று",
+                "मौसम","बारिश","आज"
+            ]
 
-            if not location:
-                return "🌦️ Please enter a city name (example: Chennai weather)."
+            for word in remove_words:
+                q = q.replace(word,"")
+
+            q = q.strip()
+
+            if len(q) > 2:
+                location = q.split()[-1]
 
             url = f"https://api.openweathermap.org/data/2.5/weather?q={location},IN&appid={WEATHER_API_KEY}&units=metric"
             data = requests.get(url).json()
 
             if data.get("cod") != 200:
-                return f"❌ Unable to fetch weather for '{location}'."
+                location = "Chennai"
+                url = f"https://api.openweathermap.org/data/2.5/weather?q={location},IN&appid={WEATHER_API_KEY}&units=metric"
+                data = requests.get(url).json()
 
             temp = data["main"]["temp"]
             humidity = data["main"]["humidity"]
@@ -147,6 +158,7 @@ class WeatherAgent:
             summary = f"🌦️ {location.title()}: {temp}°C, {humidity}% humidity, {condition}"
 
             prompt = f"{summary}. Give 2-line farming advice."
+
             ai = groq_client.chat.completions.create(
                 model=MODEL_NAME,
                 messages=[{"role": "user", "content": prompt}]
@@ -154,8 +166,8 @@ class WeatherAgent:
 
             return summary + "\n\n🌾 Advice: " + ai.choices[0].message.content.strip()
 
-        except Exception as e:
-            return f"⚠️ Error: {str(e)}"
+        except:
+            return "🌦️ Unable to fetch weather now"
 
 # ============================================================
 # 🧭 QUERY ROUTER
@@ -163,7 +175,7 @@ class WeatherAgent:
 def classify_query(q):
     q = q.lower()
 
-    if any(w in q for w in ["weather","rain","temperature","forecast","climate","வானிலை","मौसम"]):
+    if any(w in q for w in ["weather","rain","temperature","forecast","climate","வானிலை","மழை","मौसम","बारिश"]):
         return "weather"
 
     if any(w in q for w in ["sell","market","mandi","demand","சந்தை","मंडी"]):
@@ -198,18 +210,21 @@ AGENTS = {
 }
 
 # ============================================================
-# 💬 API ENDPOINTS
+# API
 # ============================================================
 @app.post("/ask")
 async def ask(request: Request):
+
     data = await request.json()
     query = data.get("question", "")
     lang = data.get("language", detect_language(query))
 
     query_en = query if lang == "en" else GoogleTranslator(source=lang, target="en").translate(query)
+
     agent = classify_query(query_en)
 
     reply_en = AGENTS[agent](query_en)
+
     reply = reply_en if lang == "en" else GoogleTranslator(source="en", target=lang).translate(reply_en)
 
     chat_history.append({"agent": agent, "question": query, "reply": reply})
@@ -217,20 +232,13 @@ async def ask(request: Request):
     return JSONResponse({
         "agent": agent,
         "reply": reply,
-        "history_count": len(chat_history)
-    })
-
-@app.post("/clear")
-async def clear_chat():
-    chat_history.clear()
-    return {"message": "Chat cleared successfully"}
-
-
+        "history_count": len(chat_history
 
 # ============================================================
-# 🚀 RUN SERVER (Render compatible)
+# 🚀 RUN SERVER (Render + Local)
 # ============================================================
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 4000))
     uvicorn.run(app, host="0.0.0.0", port=port)
+    
