@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>KissanAI — Smart Farming Assistant</title>
+
 <style>
 body {font-family:'Poppins',sans-serif;background:#e9f9e2;margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;}
 .container{background:white;border-radius:20px;padding:30px;box-shadow:0 5px 20px rgba(0,0,0,0.1);width:90%;max-width:800px;text-align:center;}
@@ -15,38 +16,48 @@ button:hover{background:#45a049;}
 textarea{width:100%;height:100px;margin-top:15px;padding:10px;border-radius:10px;border:1px solid #ccc;resize:none;}
 #response{background:#f0fff0;margin-top:15px;padding:15px;border-radius:10px;white-space:pre-wrap;}
 </style>
+
 </head>
+
 <body>
+
 <div class="container" id="app">
-  <div id="lang-section">
-    <h1>🌾 Welcome to Ai Agent</h1>
-    <p>Select your language:</p>
-    <button onclick="selectLang('en')">English</button>
-    <button onclick="selectLang('ta')">தமிழ்</button>
-    <button onclick="selectLang('hi')">हिन्दी</button>
-  </div>
 
-  <div id="dashboard" class="hidden">
-    <h1 id="welcomeMsg">🌾 Welcome, Farmer!</h1>
-    <h2 id="title">Fertilizer AI Agent</h2>
+<div id="lang-section">
+<h1>🌾 Welcome to AI Agent</h1>
+<p>Select your language:</p>
+<button onclick="selectLang('en')">English</button>
+<button onclick="selectLang('ta')">தமிழ்</button>
+<button onclick="selectLang('hi')">हिन्दी</button>
+</div>
 
-    <div class="cards">
-      <div class="card" onclick="showPopular('fertilizer')">🌾 Fertilizer Recommendation</div>
-      <div class="card" onclick="showPopular('weather')">🌦️ Weather Insight</div>
-      <div class="card" onclick="showPopular('market')">💰 Market Prices</div>
-      <div class="card" onclick="showPopular('organic')">🌱 Organic Farming Tips</div>
-    </div>
+<div id="dashboard" class="hidden">
 
-    <textarea id="question" placeholder="Type your question here..."></textarea>
-    <button onclick="sendQuestion()">Ask</button>
-    <button style="background:#d32f2f" onclick="clearChat()">🧹 Clear Chat</button>
+<h1 id="welcomeMsg">🌾 Welcome, Farmer!</h1>
+<h2 id="title">Fertilizer AI Agent</h2>
 
-    <div id="response"></div><br>
-    <button style="background:#2e7d32" onclick="changeLang()">🌐 Change Language</button>
-  </div>
+<div class="cards">
+<div class="card" onclick="showPopular('fertilizer')">🌾 Fertilizer Recommendation</div>
+<div class="card" onclick="showPopular('weather')">🌦️ Weather Insight</div>
+<div class="card" onclick="showPopular('market')">💰 Market Prices</div>
+<div class="card" onclick="showPopular('organic')">🌱 Organic Farming Tips</div>
+</div>
+
+<textarea id="question" placeholder="Type your question here..."></textarea>
+
+<button onclick="sendQuestion()">Ask</button>
+<button style="background:#d32f2f" onclick="clearChat()">🧹 Clear Chat</button>
+
+<div id="response"></div>
+<br>
+
+<button style="background:#2e7d32" onclick="changeLang()">🌐 Change Language</button>
+
+</div>
 </div>
 
 <script>
+
 let lang="en";
 
 const translations={
@@ -77,59 +88,75 @@ organic:["कम्पोस्ट कैसे बनाएं?","जैवि�
 };
 
 function selectLang(selected){
-  lang=selected;
-  const t=translations[selected];
-  document.getElementById("welcomeMsg").innerText=t.welcome;
-  document.getElementById("title").innerText=t.title;
-  document.getElementById("question").placeholder=t.placeholder;
-  document.getElementById("lang-section").classList.add("hidden");
-  document.getElementById("dashboard").classList.remove("hidden");
-
-  const msg=new SpeechSynthesisUtterance(t.welcome);
-  msg.lang=(selected==='ta')?'ta-IN':(selected==='hi')?'hi-IN':'en-US';
-  speechSynthesis.speak(msg);
+lang=selected;
+const t=translations[selected];
+document.getElementById("welcomeMsg").innerText=t.welcome;
+document.getElementById("title").innerText=t.title;
+document.getElementById("question").placeholder=t.placeholder;
+document.getElementById("lang-section").classList.add("hidden");
+document.getElementById("dashboard").classList.remove("hidden");
 }
 
 function showPopular(agent){
-  const resDiv=document.getElementById("response");
-  resDiv.innerHTML="<h3>🌾 Popular Questions</h3>";
-  popularQs[lang][agent].forEach(q=>{
-    resDiv.innerHTML+=`<button style='margin:5px;' onclick="sendQuestionPrompt('${q}')">${q}</button>`;
-  });
+const resDiv=document.getElementById("response");
+resDiv.innerHTML="<h3>🌾 Popular Questions</h3>";
+popularQs[lang][agent].forEach(q=>{
+resDiv.innerHTML+=`<button onclick="sendQuestionPrompt('${q}')">${q}</button>`;
+});
 }
 
 async function sendQuestion(){
-  const question=document.getElementById("question").value;
-  const resDiv=document.getElementById("response");
-  if(!question.trim()){resDiv.innerText="Please enter your question!";return;}
 
-  resDiv.innerText="Thinking...";
-  const res = await fetch("http://127.0.0.1:4000/ask", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({question,language:lang})
-  });
-  const data=await res.json();
-  resDiv.innerText=data.reply;
+const question=document.getElementById("question").value;
+const resDiv=document.getElementById("response");
+
+if(!question.trim()){
+resDiv.innerText="Please enter your question!";
+return;
+}
+
+resDiv.innerText="Thinking...";
+
+const res = await fetch("/ask",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+question:question,
+language:lang
+})
+});
+
+const data=await res.json();
+resDiv.innerText=data.reply;
+
 }
 
 function sendQuestionPrompt(q){
-  document.getElementById("question").value=q;
-  sendQuestion();
+document.getElementById("question").value=q;
+sendQuestion();
 }
 
 async function clearChat(){
-  document.getElementById("question").value="";
-  document.getElementById("response").innerText="Chat cleared!";
-  await fetch("http://127.0.0.1:4000/clear",{method:"POST"});
+
+document.getElementById("question").value="";
+document.getElementById("response").innerText="Chat cleared!";
+
+await fetch("/clear",{
+method:"POST"
+});
+
 }
 
 function changeLang(){
-  document.getElementById("dashboard").classList.add("hidden");
-  document.getElementById("lang-section").classList.remove("hidden");
-  document.getElementById("response").innerText="";
-  document.getElementById("question").value="";
+document.getElementById("dashboard").classList.add("hidden");
+document.getElementById("lang-section").classList.remove("hidden");
+document.getElementById("response").innerText="";
+document.getElementById("question").value="";
 }
+
 </script>
+
 </body>
 </html>
