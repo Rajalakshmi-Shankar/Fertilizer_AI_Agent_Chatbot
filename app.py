@@ -1,9 +1,9 @@
 # ============================================================
-# 🌾 KissanAI — Backend (Final with Weather API)
+# 🌾 KissanAI — Backend + Frontend (Single Deploy)
 # ============================================================
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from deep_translator import GoogleTranslator
 from groq import Groq
@@ -25,7 +25,7 @@ app.add_middleware(
 )
 
 # ============================================================
-# 🔑 API KEYS (SAFE)
+# 🔑 API KEYS
 # ============================================================
 load_dotenv()
 
@@ -34,6 +34,13 @@ WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
 
 groq_client = Groq(api_key=GROQ_API_KEY)
 MODEL_NAME = "llama-3.1-8b-instant"
+
+# ============================================================
+# 🌐 SERVE FRONTEND
+# ============================================================
+@app.get("/")
+async def serve_frontend():
+    return FileResponse("index.html")
 
 # ============================================================
 # 🌍 Language Detection
@@ -191,13 +198,6 @@ AGENTS = {
 }
 
 # ============================================================
-# 🌐 ROOT CHECK
-# ============================================================
-@app.get("/")
-async def root():
-    return {"message": "Backend is working"}
-
-# ============================================================
 # 💬 API ENDPOINTS
 # ============================================================
 @app.post("/ask")
@@ -225,10 +225,12 @@ async def clear_chat():
     chat_history.clear()
     return {"message": "Chat cleared successfully"}
 
+
+
 # ============================================================
-# 🚀 RUN SERVER
+# 🚀 RUN SERVER (Render compatible)
 # ============================================================
 if __name__ == "__main__":
     import uvicorn
-    print("🚀 KissanAI Backend running at http://127.0.0.1:4000")
-    uvicorn.run(app, host="0.0.0.0", port=4000)
+    port = int(os.environ.get("PORT", 4000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
