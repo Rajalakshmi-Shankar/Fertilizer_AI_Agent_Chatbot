@@ -62,60 +62,39 @@ let lang="en";
 let currentAgent="";
 
 const translations={
+en:{welcome:"🌾 Welcome, Farmer!",title:"Fertilizer AI Agent",placeholder:"Type your question here...",fert:"🌾 Fertilizer Recommendation",weather:"🌦️ Weather Insight",market:"💰 Market Prices",organic:"🌱 Organic Farming Tips",ask:"Ask",clear:"🧹 Clear Chat",change:"🌐 Change Language",popular:"🌾 Popular Questions"},
+ta:{welcome:"🌾 வணக்கம் விவசாயி!",title:"உரம் AI உதவியாளர்",placeholder:"உங்கள் கேள்வியை இங்கே தட்டச்சு செய்யவும்...",fert:"🌾 உரம் பரிந்துரை",weather:"🌦️ வானிலை தகவல்",market:"💰 சந்தை விலை",organic:"🌱 இயற்கை விவசாய குறிப்புகள்",ask:"கேள்",clear:"🧹 சாட்டை அழி",change:"🌐 மொழி மாற்று",popular:"🌾 பொதுவான கேள்விகள்"},
+hi:{welcome:"🌾 नमस्ते किसान!",title:"खाद एआई सहायक",placeholder:"अपना प्रश्न यहां लिखें...",fert:"🌾 उर्वरक सुझाव",weather:"🌦️ मौसम जानकारी",market:"💰 बाजार भाव",organic:"🌱 जैविक खेती सुझाव",ask:"पूछें",clear:"🧹 चैट साफ करें",change:"🌐 भाषा बदलें",popular:"🌾 लोकप्रिय प्रश्न"}
+};
+
+const popularQs={
 en:{
-welcome:"🌾 Welcome, Farmer!",
-title:"Fertilizer AI Agent",
-placeholder:"Type your question here...",
-fert:"🌾 Fertilizer Recommendation",
-weather:"🌦️ Weather Insight",
-market:"💰 Market Prices",
-organic:"🌱 Organic Farming Tips",
-ask:"Ask",
-clear:"🧹 Clear Chat",
-change:"🌐 Change Language",
-popular:"🌾 Popular Questions"
+fertilizer:["Best fertilizer for rice?","How much urea to use?","DAP vs NPK difference?","When to apply fertilizer?"],
+weather:["Today's weather 🌦️","How to protect crops from rain?","Best season for wheat?","Does humidity affect yield?"],
+market:["Current tomato price 💰","Where to sell my crops?","High demand vegetables?","Best time to sell grains?"],
+organic:["How to make compost?","Organic pest control?","Crop rotation benefits?","Best organic manure?"]
 },
 ta:{
-welcome:"🌾 வணக்கம் விவசாயி!",
-title:"உரம் AI உதவியாளர்",
-placeholder:"உங்கள் கேள்வியை இங்கே தட்டச்சு செய்யவும்...",
-fert:"🌾 உரம் பரிந்துரை",
-weather:"🌦️ வானிலை தகவல்",
-market:"💰 சந்தை விலை",
-organic:"🌱 இயற்கை விவசாய குறிப்புகள்",
-ask:"கேள்",
-clear:"🧹 சாட்டை அழி",
-change:"🌐 மொழி மாற்று",
-popular:"🌾 பொதுவான கேள்விகள்"
+fertilizer:["நெல் விளைக்கு சிறந்த உரம் எது?","ஒரு ஏக்கருக்கு எவ்வளவு யூரியா?","DAP மற்றும் NPK வித்தியாசம் என்ன?","உரம் போட சிறந்த நேரம் எது?"],
+weather:["இன்றைய வானிலை 🌦️","மழையிலிருந்து பயிர்களை எவ்வாறு காப்பது?","கோதுமை விதைக்க சிறந்த காலம்?","ஈரப்பதம் விளைச்சலை பாதிக்குமா?"],
+market:["தக்காளி விலை என்ன? 💰","எங்கே பயிர்களை விற்கலாம்?","அதிக தேவை உள்ள காய்கறிகள்?","தானிய விற்க சிறந்த நேரம்?"],
+organic:["கம்போஸ்ட் செய்வது எப்படி?","இயற்கை பூச்சிக்கொல்லிகள்?","பயிர் மாறுதல் நன்மைகள்?","சிறந்த உயிர் உரம்?"]
 },
 hi:{
-welcome:"🌾 नमस्ते किसान!",
-title:"खाद एआई सहायक",
-placeholder:"अपना प्रश्न यहां लिखें...",
-fert:"🌾 उर्वरक सुझाव",
-weather:"🌦️ मौसम जानकारी",
-market:"💰 बाजार भाव",
-organic:"🌱 जैविक खेती सुझाव",
-ask:"पूछें",
-clear:"🧹 चैट साफ करें",
-change:"🌐 भाषा बदलें",
-popular:"🌾 लोकप्रिय प्रश्न"
+fertilizer:["धान के लिए सबसे अच्छा खाद कौन सा है?","एक एकड़ में कितना यूरिया चाहिए?","DAP और NPK में क्या फर्क है?","खाद कब डालना चाहिए?"],
+weather:["आज का मौसम 🌦️","फसलों को बारिश से कैसे बचाएं?","गेहूं बोने का सही समय?","क्या नमी पैदावार को प्रभावित करती है?"],
+market:["टमाटर का भाव क्या है? 💰","फसल कहाँ बेचें?","कौन सी सब्ज़ियाँ ज़्यादा मांग में हैं?","अनाज बेचने का सही समय?"],
+organic:["कम्पोस्ट कैसे बनाएं?","जैविक कीटनाशक कौन से हैं?","फसल चक्रण के फायदे?","सबसे अच्छा जैविक खाद कौन सा है?"]
 }
 };
 
 function formatIndianCurrency(text){
-return text
-.replace(/\$/g,"₹")
-.replace(/USD/g,"₹")
-.replace(/Rs\./g,"₹")
-.replace(/INR/g,"₹");
+return text.replace(/\$/g,"₹").replace(/USD/g,"₹").replace(/INR/g,"₹");
 }
 
 function speak(text){
 const msg=new SpeechSynthesisUtterance(text);
-if(lang==="ta") msg.lang="ta-IN";
-else if(lang==="hi") msg.lang="hi-IN";
-else msg.lang="en-US";
+msg.lang = lang==="ta"?"ta-IN":lang==="hi"?"hi-IN":"en-US";
 speechSynthesis.cancel();
 speechSynthesis.speak(msg);
 }
@@ -124,43 +103,47 @@ function selectLang(selected){
 lang=selected;
 const t=translations[selected];
 
-document.getElementById("welcomeMsg").innerText=t.welcome;
-document.getElementById("title").innerText=t.title;
-document.getElementById("question").placeholder=t.placeholder;
+welcomeMsg.innerText=t.welcome;
+title.innerText=t.title;
+question.placeholder=t.placeholder;
 
-document.getElementById("fertCard").innerText=t.fert;
-document.getElementById("weatherCard").innerText=t.weather;
-document.getElementById("marketCard").innerText=t.market;
-document.getElementById("organicCard").innerText=t.organic;
+fertCard.innerText=t.fert;
+weatherCard.innerText=t.weather;
+marketCard.innerText=t.market;
+organicCard.innerText=t.organic;
 
-document.getElementById("askBtn").innerText=t.ask;
-document.getElementById("clearBtn").innerText=t.clear;
-document.getElementById("langBtn").innerText=t.change;
+askBtn.innerText=t.ask;
+clearBtn.innerText=t.clear;
+langBtn.innerText=t.change;
 
-document.getElementById("lang-section").classList.add("hidden");
-document.getElementById("dashboard").classList.remove("hidden");
+lang-section.classList.add("hidden");
+dashboard.classList.remove("hidden");
 
 speak(t.welcome);
 }
 
 function showPopular(agent){
 currentAgent=agent;
-
-const resDiv=document.getElementById("response");
+const resDiv=response;
 resDiv.innerHTML="<b>"+translations[lang].popular+"</b><br><br>";
+
+popularQs[lang][agent].forEach(q=>{
+resDiv.innerHTML+=`<button onclick="sendQuestionPrompt('${q}')">${q}</button>`;
+});
+}
+
+function sendQuestionPrompt(q){
+question.value=q;
+sendQuestion();
 }
 
 async function sendQuestion(){
+response.innerText="Thinking...";
 
-const question=document.getElementById("question").value;
-const resDiv=document.getElementById("response");
-
-resDiv.innerText="Thinking...";
-
-const res = await fetch("/ask",{
+const res=await fetch("/ask",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
-body:JSON.stringify({question,language:lang})
+body:JSON.stringify({question:question.value,language:lang})
 });
 
 const data=await res.json();
@@ -171,22 +154,21 @@ if(currentAgent==="market"){
 reply=formatIndianCurrency(reply);
 }
 
-resDiv.innerText=reply;
-
+response.innerText=reply;
 speak(reply);
 }
 
 async function clearChat(){
-document.getElementById("question").value="";
-document.getElementById("response").innerText="";
+question.value="";
+response.innerText="";
 await fetch("/clear",{method:"POST"});
 }
 
 function changeLang(){
-document.getElementById("dashboard").classList.add("hidden");
-document.getElementById("lang-section").classList.remove("hidden");
-document.getElementById("response").innerText="";
-document.getElementById("question").value="";
+dashboard.classList.add("hidden");
+lang-section.classList.remove("hidden");
+response.innerText="";
+question.value="";
 }
 
 </script>
