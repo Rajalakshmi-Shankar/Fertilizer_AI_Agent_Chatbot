@@ -219,26 +219,34 @@ async def ask(request: Request):
     query = data.get("question", "")
     lang = data.get("language", detect_language(query))
 
-    query_en = query if lang == "en" else GoogleTranslator(source=lang, target="en").translate(query)
+    query_en = query if lang == "en" else GoogleTranslator(
+        source=lang, target="en"
+    ).translate(query)
 
     agent = classify_query(query_en)
 
     reply_en = AGENTS[agent](query_en)
 
-    reply = reply_en if lang == "en" else GoogleTranslator(source="en", target=lang).translate(reply_en)
+    reply = reply_en if lang == "en" else GoogleTranslator(
+        source="en", target=lang
+    ).translate(reply_en)
 
-    chat_history.append({"agent": agent, "question": query, "reply": reply})
+    chat_history.append({
+        "agent": agent,
+        "question": query,
+        "reply": reply
+    })
 
     return JSONResponse({
         "agent": agent,
         "reply": reply,
-        "history_count": len(chat_history
-
+        "history_count": len(chat_history)
+    })
 # ============================================================
 # 🚀 RUN SERVER (Render + Local)
 # ============================================================
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 4000))
+    port = int(os.environ.get("PORT", 10000))
     uvicorn.run(app, host="0.0.0.0", port=port)
     
