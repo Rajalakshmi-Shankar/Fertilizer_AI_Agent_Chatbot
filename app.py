@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from deep_translator import GoogleTranslator
 from groq import Groq
 import requests
+import os
+from dotenv import load_dotenv
 
 # ============================================================
 # 🚀 FastAPI App Setup
@@ -23,10 +25,12 @@ app.add_middleware(
 )
 
 # ============================================================
-# 🔑 API KEYS
+# 🔑 API KEYS (SAFE)
 # ============================================================
-GROQ_API_KEY = "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"
-WEATHER_API_KEY = "96d00d9b13a5e424149eeaaa5e2ab786"
+load_dotenv()
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
 
 groq_client = Groq(api_key=GROQ_API_KEY)
 MODEL_NAME = "llama-3.1-8b-instant"
@@ -108,14 +112,13 @@ class IrrigationAgent:
         ).choices[0].message.content.strip()
 
 # ============================================================
-# 🌦️ Weather Agent (FIXED — ONLY CHANGE)
+# 🌦️ Weather Agent
 # ============================================================
 class WeatherAgent:
     def handle(self, query):
         try:
             q = query.lower()
 
-            # remove extra words from sentence
             for word in ["weather", "temperature", "forecast", "in", "today", "tomorrow"]:
                 q = q.replace(word, "")
 
