@@ -10,7 +10,7 @@ from groq import Groq
 import requests
 import os
 from dotenv import load_dotenv
-
+ 
 # ============================================================
 # 🚀 FastAPI App Setup
 # ============================================================
