@@ -31,6 +31,7 @@ load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
+MANDI_API_KEY = os.getenv("MANDI_API_KEY")
 
 groq_client = Groq(api_key=GROQ_API_KEY)
 MODEL_NAME = "llama-3.1-8b-instant"
@@ -89,19 +90,52 @@ class OrganicAgent:
 
 class MarketAgent:
     def handle(self, q):
-        prompt = f"Farmer query: {q}. Give market advice in Indian rupees only."
-        return groq_client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[{"role": "user", "content": prompt}]
-        ).choices[0].message.content.strip()
+        try:
+            q = q.lower()
+
+            crops = {
+                "TOMATO":["tomato","தக்காளி","टमाटर"],
+                "ONION":["onion","வெங்காயம்","प्याज"],
+                "RICE":["rice","நெல்","धान"],
+                "WHEAT":["wheat","கோதுமை","गेहूं"]
+            }
+
+            crop = None
+
+            for key, words in crops.items():
+                for w in words:
+                    if w in q:
+                        crop = key
+                        break
+
+            if not crop:
+                return "Please ask crop price like tomato price"
+
+            url = f"https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key={MANDI_API_KEY}&format=json&limit=5&filters[commodity]={crop}"
+
+            data = requests.get(url).json()
+            records = data.get("records", [])
+
+            if not records:
+                return f"No market data for {crop}"
+
+            result = f"💰 {crop} Market Price (₹)\n\n"
+
+            for r in records[:5]:
+                market = r.get("market","")
+                state = r.get("state","")
+                price = r.get("modal_price","")
+
+                result += f"{market} ({state}) : ₹{price}\n"
+
+            return result
+
+        except:
+            return "Unable to fetch live market price"
 
 class PriceAgent:
     def get_prices(self, q):
-        prompt = f"Farmer query: {q}. Give crop price in INR only."
-        return groq_client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[{"role": "user", "content": prompt}]
-        ).choices[0].message.content.strip()
+        return MarketAgent().handle(q)
 
 class CropAgent:
     def handle(self, q):
