@@ -9,8 +9,9 @@ from deep_translator import GoogleTranslator
 from groq import Groq
 import requests
 import os
+import re
 from dotenv import load_dotenv
- 
+
 # ============================================================
 # 🚀 FastAPI App Setup
 # ============================================================
@@ -88,30 +89,47 @@ class OrganicAgent:
             messages=[{"role": "user", "content": prompt}]
         ).choices[0].message.content.strip()
 
+
+# ============================================================
+# 💰 MARKET AGENT (FINAL FIXED)
+# ============================================================
 class MarketAgent:
     def handle(self, q):
         try:
             q = q.lower()
 
             crops = {
-                "TOMATO":["tomato","தக்காளி","टमाटर"],
-                "ONION":["onion","வெங்காயம்","प्याज"],
-                "RICE":["rice","நெல்","धान"],
-                "WHEAT":["wheat","கோதுமை","गेहूं"]
+                "Tomato":["tomato","தக்காளி","टमाटर"],
+                "Onion":["onion","வெங்காயம்","प्याज"],
+                "Rice":["rice","நெல்","धान"],
+                "Wheat":["wheat","கோதுமை","गेहूं"],
+                "Potato":["potato","உருளைக்கிழங்கு","आलू"],
+                "Maize":["maize","மக்காச்சோளம்","मक्का"],
+                "Cotton":["cotton","பருத்தி","कपास"],
+                "Groundnut":["groundnut","வேர்க்கடலை","मूंगफली"]
             }
 
             crop = None
 
             for key, words in crops.items():
                 for w in words:
-                    if w in q:
+                    if re.search(rf"\b{w}\b", q):
                         crop = key
                         break
+                if crop:
+                    break
 
             if not crop:
                 return "Please ask crop price like tomato price"
 
-            url = f"https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key={MANDI_API_KEY}&format=json&limit=5&filters[commodity]={crop}"
+            url = (
+                "https://api.data.gov.in/resource/"
+                "9ef84268-d588-465a-a308-a864a43d0070"
+                f"?api-key={MANDI_API_KEY}"
+                "&format=json"
+                "&limit=5"
+                f"&filters[commodity]={crop}"
+            )
 
             data = requests.get(url).json()
             records = data.get("records", [])
@@ -133,9 +151,11 @@ class MarketAgent:
         except:
             return "Unable to fetch live market price"
 
+
 class PriceAgent:
     def get_prices(self, q):
         return MarketAgent().handle(q)
+
 
 class CropAgent:
     def handle(self, q):
@@ -145,6 +165,7 @@ class CropAgent:
             messages=[{"role": "user", "content": prompt}]
         ).choices[0].message.content.strip()
 
+
 class IrrigationAgent:
     def handle(self, q):
         prompt = f"Farmer query: {q}. Give irrigation advice."
@@ -153,8 +174,9 @@ class IrrigationAgent:
             messages=[{"role": "user", "content": prompt}]
         ).choices[0].message.content.strip()
 
+
 # ============================================================
-# 🌦️ Weather Agent (FINAL MULTI LANGUAGE)
+# 🌦️ WEATHER AGENT
 # ============================================================
 class WeatherAgent:
     def handle(self, query):
@@ -164,9 +186,9 @@ class WeatherAgent:
             location = "Chennai"
 
             remove_words = [
-                "weather","temperature","forecast","rain","today","tomorrow",
-                "வானிலை","மழை","இன்று",
-                "मौसम","बारिश","आज"
+                "weather","temperature","forecast","rain","today",
+                "வானிலை","மழை",
+                "मौसम","बारिश"
             ]
 
             for word in remove_words:
@@ -191,17 +213,11 @@ class WeatherAgent:
 
             summary = f"🌦️ {location.title()}: {temp}°C, {humidity}% humidity, {condition}"
 
-            prompt = f"{summary}. Give 2-line farming advice."
-
-            ai = groq_client.chat.completions.create(
-                model=MODEL_NAME,
-                messages=[{"role": "user", "content": prompt}]
-            )
-
-            return summary + "\n\n🌾 Advice: " + ai.choices[0].message.content.strip()
+            return summary
 
         except:
             return "🌦️ Unable to fetch weather now"
+
 
 # ============================================================
 # 🧭 QUERY ROUTER
@@ -209,28 +225,29 @@ class WeatherAgent:
 def classify_query(q):
     q = q.lower()
 
-    if any(w in q for w in ["weather","rain","temperature","forecast","climate","வானிலை","மழை","मौसम","बारिश"]):
+    if any(w in q for w in ["weather","rain","temperature","வானிலை","மழை","मौसम"]):
         return "weather"
 
-    if any(w in q for w in ["sell","market","mandi","demand","சந்தை","मंडी"]):
+    if any(w in q for w in ["market","mandi","சந்தை","मंडी"]):
         return "market"
 
     if any(w in q for w in ["price","rate","cost","விலை","कीमत"]):
         return "price"
 
-    if any(w in q for w in ["organic","bio","vermicompost","உயிர்","जैविक"]):
+    if any(w in q for w in ["organic","உயிர்","जैविक"]):
         return "organic"
 
-    if any(w in q for w in ["soil","ph","மண்","मिट्टी"]):
+    if any(w in q for w in ["soil","மண்","मिट्टी"]):
         return "soil"
 
-    if any(w in q for w in ["irrigation","drip","sprinkler","நீர்ப்பாசனம்","सिंचाई"]):
+    if any(w in q for w in ["irrigation","நீர்ப்பாசனம்","सिंचाई"]):
         return "irrigation"
 
-    if any(w in q for w in ["crop","seed","sow","பயிர்","फसल"]):
+    if any(w in q for w in ["crop","பயிர்","फसल"]):
         return "crop"
 
     return "fertilizer"
+
 
 AGENTS = {
     "fertilizer": FertilizerCalcAgent().recommend,
@@ -242,6 +259,7 @@ AGENTS = {
     "crop": CropAgent().handle,
     "irrigation": IrrigationAgent().handle,
 }
+
 
 # ============================================================
 # API
@@ -276,11 +294,12 @@ async def ask(request: Request):
         "reply": reply,
         "history_count": len(chat_history)
     })
+
+
 # ============================================================
-# 🚀 RUN SERVER (Render + Local)
+# 🚀 RUN SERVER
 # ============================================================
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 10000))
     uvicorn.run(app, host="0.0.0.0", port=port)
-    
