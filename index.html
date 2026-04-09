@@ -131,6 +131,8 @@ let lang="en";
 let currentAgent="";
 let voiceEnabled=true;
 
+speechSynthesis.onvoiceschanged = () => {};
+
 const translations={
 en:{welcome:"🌾 Welcome, Farmer!",title:"Fertilizer AI Agent",placeholder:"Type your question here...",fert:"🌾 Fertilizer Recommendation",weather:"🌦️ Weather Insight",market:"💰 Market Prices",organic:"🌱 Organic Farming Tips",ask:"Ask",clear:"🧹 Clear Chat",change:"🌐 Change Language",popular:"🌾 Popular Questions"},
 ta:{welcome:"🌾 வணக்கம் விவசாயி!",title:"உரம் AI உதவியாளர்",placeholder:"உங்கள் கேள்வியை இங்கே தட்டச்சு செய்யவும்...",fert:"🌾 உரம் பரிந்துரை",weather:"🌦️ வானிலை தகவல்",market:"💰 சந்தை விலை",organic:"🌱 இயற்கை விவசாய குறிப்புகள்",ask:"கேள்",clear:"🧹 சாட்டை அழி",change:"🌐 மொழி மாற்று",popular:"🌾 பொதுவான கேள்விகள்"},
@@ -164,10 +166,26 @@ return text.replace(/\$/g,"₹").replace(/USD/g,"₹").replace(/INR/g,"₹");
 
 function speak(text){
 if(!voiceEnabled) return;
-const msg=new SpeechSynthesisUtterance(text);
-msg.lang=lang==="ta"?"ta-IN":lang==="hi"?"hi-IN":"en-US";
-speechSynthesis.cancel();
-speechSynthesis.speak(msg);
+
+const synth = window.speechSynthesis;
+const msg = new SpeechSynthesisUtterance(text);
+
+if(lang==="ta") msg.lang="ta-IN";
+else if(lang==="hi") msg.lang="hi-IN";
+else msg.lang="en-IN";
+
+const voices = synth.getVoices();
+
+let voice = voices.find(v=>v.lang===msg.lang);
+
+if(!voice){
+voice = voices.find(v=>v.lang.startsWith(lang));
+}
+
+if(voice) msg.voice=voice;
+
+synth.cancel();
+synth.speak(msg);
 }
 
 function toggleVoice(){
@@ -176,7 +194,7 @@ voiceEnabled=!voiceEnabled;
 
 function startMic(){
 const recognition=new(window.SpeechRecognition||window.webkitSpeechRecognition)();
-recognition.lang=lang==="ta"?"ta-IN":lang==="hi"?"hi-IN":"en-US";
+recognition.lang=lang==="ta"?"ta-IN":lang==="hi"?"hi-IN":"en-IN";
 recognition.start();
 recognition.onresult=function(e){
 question.value=e.results[0][0].transcript;
@@ -188,9 +206,9 @@ function selectLang(selected){
 lang=selected;
 const t=translations[selected];
 
-document.getElementById("welcomeMsg").innerText=t.welcome;
-document.getElementById("title").innerText=t.title;
-document.getElementById("question").placeholder=t.placeholder;
+welcomeMsg.innerText=t.welcome;
+title.innerText=t.title;
+question.placeholder=t.placeholder;
 
 fertCard.innerText=t.fert;
 weatherCard.innerText=t.weather;
@@ -201,8 +219,8 @@ askBtn.innerText=t.ask;
 clearBtn.innerText=t.clear;
 langBtn.innerText=t.change;
 
-document.getElementById("lang-section").classList.add("hidden");
-document.getElementById("dashboard").classList.remove("hidden");
+lang-section.classList.add("hidden");
+dashboard.classList.remove("hidden");
 
 speak(t.welcome);
 }
@@ -251,8 +269,8 @@ await fetch("/clear",{method:"POST"});
 }
 
 function changeLang(){
-document.getElementById("dashboard").classList.add("hidden");
-document.getElementById("lang-section").classList.remove("hidden");
+dashboard.classList.add("hidden");
+lang-section.classList.remove("hidden");
 response.innerText="";
 question.value="";
 }
