@@ -153,10 +153,42 @@ organic:["कम्पोस्ट कैसे बनाएं?","जैवि�
 
 function speak(text){
 if(!voiceEnabled) return;
-const msg=new SpeechSynthesisUtterance(text);
-msg.lang=lang==="ta"?"ta-IN":lang==="hi"?"hi-IN":"en-IN";
-speechSynthesis.cancel();
-speechSynthesis.speak(msg);
+
+const synth = window.speechSynthesis;
+
+function speakNow(){
+
+const msg = new SpeechSynthesisUtterance(text);
+
+msg.lang =
+lang==="ta" ? "ta-IN" :
+lang==="hi" ? "hi-IN" :
+"en-IN";
+
+const voices = synth.getVoices();
+
+let selectedVoice =
+voices.find(v => v.lang === msg.lang) ||
+voices.find(v => v.lang.startsWith(lang));
+
+if(selectedVoice){
+msg.voice = selectedVoice;
+}
+
+msg.rate = 0.95;
+msg.pitch = 1;
+
+synth.cancel();
+synth.speak(msg);
+}
+
+// wait for voices to load
+if(synth.getVoices().length === 0){
+synth.onvoiceschanged = speakNow;
+}else{
+speakNow();
+}
+
 }
 
 function toggleVoice(){voiceEnabled=!voiceEnabled;}
